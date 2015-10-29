@@ -8,14 +8,33 @@ Put RCTICloudDocuments.m in your XCode Project
 ## Usage:
 ```javascript
 var Documents = React.NativeModules.ICloudDocuments;
-Documents.attributesOfItemAtPath(path,(err,attrs)=>{});
-Documents.contentsAtPath(manifest,(err,contents)=>{});
-Documents.contentsOfDirectoryAtPath(path, (err, files)=>{});
-Documents.copyFileToICloud(manifest,(err,attrs)=>{});
-Documents.documentPath((path)=>{});
-Documents.iCloudDocumentPath((path)=>{});
-Documents.getICloudDocumentURLByLocalPath(localPath,(iCloudPath)=>{});
+
+// get iCloud token
 Documents.getICloudToken((token)=>{});
-Documents.moveFileToICloud(localPath,(err, result)=>{});
-Documents.removeICloudFile(iCloudPath,(err, isSuccess)=>{});
+
+// get iCloud or local doc root
+Documents.iCloudDocumentPath((path)=>{});
+Documents.documentPath((path)=>{});
+
+// overwrite file to or from iCloud
+Documents.replaceFileToICloud(localPath, (err,resultURL)=>{});
+Documents.replaceFileFromICloud(iCloudPath, (err,resultURL)=>{});
+
+// copy file to or from iCloud
+Documents.copyFileToICloud(localPath, (err,resultURL)=>{});
+Documents.copyFileFromICloud(iCloudPath, (err,resultURL)=>{});
+
+// move file to or from icloud
+Documents.moveFileToICloud(localPath, (err,resultURL)=>{});
+Documents.moveFileFromICloud(iCloudPath, (err,resultURL)=>{});
+
+// get file attributes with path
+Documents.attributesOfItemAtPath(path,(err,attrs)=>{});
+
+// contents at item or directory
+Documents.contentsAtPath(manifest,(err,contents)=>{}); // utf8 encoded
+Documents.contentsOfDirectoryAtPath(path, (err, files)=>{});
+
+// remove file with path
+Documents.removeFileAtPath(pathToRemove,(err, isSuccess)=>{});
 ```

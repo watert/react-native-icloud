@@ -85,12 +85,12 @@ RCT_EXPORT_METHOD(replaceFileFromICloud:(NSString *)iCloudPath :(RCTResponseSend
 }
 
 
-#pragma mark - copyFile to or from iCloud
-RCT_EXPORT_METHOD(copyFileToICloud:(NSString *)pathToUpload :(RCTResponseSenderBlock)callback)
+#pragma mark - copy file to or from iCloud
+RCT_EXPORT_METHOD(copyFileToICloud:(NSString *)localPath :(RCTResponseSenderBlock)callback)
 {
   //  NSURL *docUrl = [self getICloudDocumentURL];
-  NSURL *sourceURL = [NSURL fileURLWithPath:pathToUpload];
-  NSURL *destinationURL = [self getICloudDocumentURLByLocalPath:pathToUpload];
+  NSURL *sourceURL = [NSURL fileURLWithPath:localPath];
+  NSURL *destinationURL = [self getICloudDocumentURLByLocalPath:localPath];
 
 
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -211,7 +211,7 @@ RCT_EXPORT_METHOD(contentsOfDirectoryAtPath:(NSString *)path :(RCTResponseSender
 }
 
 #pragma mark - remove file with path
-RCT_EXPORT_METHOD(removeICloudFile:(NSString *)pathToRemove :(RCTResponseSenderBlock)callback){
+RCT_EXPORT_METHOD(removeFileAtPath:(NSString *)pathToRemove :(RCTResponseSenderBlock)callback){
   NSURL *destinationURL = [NSURL URLWithString:pathToRemove];
 
   NSFileManager *fileManager = [[NSFileManager alloc] init];
