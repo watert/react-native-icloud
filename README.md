@@ -1,6 +1,11 @@
 # react-native-icloud
 wrapping nsfilemanager for icloud usage
 
+## Installation:
+
+Put RCTICloudDocuments.m in your XCode Project
+
+## Usage:
 ```javascript
 var Documents = React.NativeModules.ICloudDocuments;
 Documents.attributesOfItemAtPath(path,(err,attrs)=>{});
