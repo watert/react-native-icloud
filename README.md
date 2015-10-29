@@ -3,7 +3,7 @@ wrapping nsfilemanager for icloud usage
 
 ## Installation:
 
-Put RCTICloudDocuments.m in your XCode Project
+Put `RCTICloudDocuments.m` in your XCode Project
 
 ## Usage:
 ```javascript
