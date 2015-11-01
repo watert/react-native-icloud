@@ -182,14 +182,32 @@ RCT_EXPORT_METHOD(moveFileFromICloud:(NSString *)iCloudPath :(RCTResponseSenderB
 
 #pragma mark - get file attributes with path
 RCT_EXPORT_METHOD(attributesOfItemAtPath:(NSString *)path :(RCTResponseSenderBlock)callback){
-  NSDictionary *attrs = [[[NSFileManager alloc] init] attributesOfItemAtPath:path error:nil];
-  //  NSDictionary *attrs = [[[NSFileManager alloc] init] attributesOfItemAtPath:path error:nil];
+  NSFileManager *fileManager = [[NSFileManager alloc] init];
+  NSDictionary *attrs;
+  BOOL isDir;
+  BOOL isExists = [fileManager fileExistsAtPath:path isDirectory:&isDir];
+  if (!isExists) {
+    callback(@[@"path not exists"]);
+    return;
+  }else if(isDir){
+    NSLog(@"isDir");
+    attrs = [fileManager attributesOfItemAtPath:path error:nil];
+  }else {
+    attrs = [fileManager attributesOfItemAtPath:path error:nil];
+  }
+  
   NSNumber *createAt = [NSNumber numberWithDouble: [[attrs objectForKey:@"NSFileCreationDate"] timeIntervalSince1970] ];
   NSNumber *modifyAt = [NSNumber numberWithDouble: [[attrs objectForKey:@"NSFileModificationDate"] timeIntervalSince1970] ];
-  NSDictionary *ret = @{
-                        @"createAt": createAt,
-                        @"modifyAt": modifyAt,
-                        @"size": [attrs objectForKey:@"NSFileSize"]};
+  NSLog(@"attrs %@ at %@", attrs, path);
+  NSMutableDictionary *ret = [NSMutableDictionary dictionaryWithDictionary: @{
+            @"path": path,
+            @"createAt": createAt,
+            @"modifyAt": modifyAt,
+            @"isDirectory": [NSNumber numberWithBool:isDir]
+            }];
+  if(!isDir) {
+    [ret setValue:[attrs objectForKey:@"NSFileSize"] forKey:@"size"];
+  }
   //  NSLog(@"attrs %@", attrs);
   callback(@[@NO, ret]);
 }
@@ -262,7 +280,7 @@ RCT_EXPORT_METHOD(getICloudToken:(RCTResponseSenderBlock)callback){
 #pragma mark - get iCloud or local doc root
 RCT_EXPORT_METHOD(iCloudDocumentPath:(RCTResponseSenderBlock)callback)
 {
-  callback(@[@NO, [self getICloudDocumentURL] ]);
+  callback(@[@NO, [[self getICloudDocumentURL] absoluteString] ]);
 }
 RCT_EXPORT_METHOD(documentPath:(RCTResponseSenderBlock)callback)
 {
