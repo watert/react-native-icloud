@@ -16,7 +16,9 @@
     "ios",
     "icloud"
   ],
-  "author": "watert",
+  "author": {
+    "name": "watert"
+  },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/watert/react-native-icloud/issues"
@@ -24,5 +26,11 @@
   "homepage": "https://github.com/watert/react-native-icloud#readme",
   "peerDependencies": {
     "react-native": ">=0.12"
-  }
+  },
+  "readme": "# react-native-icloud\nwrapping nsfilemanager for icloud usage\n\n## Installation:\n\nPut `RCTICloudDocuments.m` in your XCode Project\n\n## Usage:\n```javascript\nvar Documents = React.NativeModules.ICloudDocuments;\n\n// get iCloud token\nDocuments.getICloudToken((token)=>{});\n\n// get iCloud or local doc root\nDocuments.iCloudDocumentPath((path)=>{});\nDocuments.documentPath((path)=>{});\n\n// overwrite file to or from iCloud\nDocuments.replaceFileToICloud(localPath, (err,resultURL)=>{});\nDocuments.replaceFileFromICloud(iCloudPath, (err,resultURL)=>{});\n\n// copy file to or from iCloud\nDocuments.copyFileToICloud(localPath, (err,resultURL)=>{});\nDocuments.copyFileFromICloud(iCloudPath, (err,resultURL)=>{});\n\n// move file to or from icloud\nDocuments.moveFileToICloud(localPath, (err,resultURL)=>{});\nDocuments.moveFileFromICloud(iCloudPath, (err,resultURL)=>{});\n\n// get file attributes with path\nDocuments.attributesOfItemAtPath(path,(err,attrs)=>{});\n\n// contents at item or directory\nDocuments.contentsAtPath(manifest,(err,contents)=>{}); // utf8 encoded\nDocuments.contentsOfDirectoryAtPath(path, (err, files)=>{});\n\n// remove file with path\nDocuments.removeFileAtPath(pathToRemove,(err, isSuccess)=>{});\n```\n",
+  "readmeFilename": "README.md",
+  "gitHead": "a3ffca81146041365cccae341737bf2e35179ece",
+  "_id": "react-native-icloud@0.1.1",
+  "_shasum": "336166903efa74c3deee2e4bd5122cb797ce4703",
+  "_from": "react-native-icloud@*"
 }

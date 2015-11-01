@@ -10,11 +10,11 @@ Put `RCTICloudDocuments.m` in your XCode Project
 var Documents = React.NativeModules.ICloudDocuments;
 
 // get iCloud token
-Documents.getICloudToken((token)=>{});
+Documents.getICloudToken((err, token)=>{});
 
 // get iCloud or local doc root
-Documents.iCloudDocumentPath((path)=>{});
-Documents.documentPath((path)=>{});
+Documents.iCloudDocumentPath((err, path)=>{});
+Documents.documentPath((err, path)=>{});
 
 // overwrite file to or from iCloud
 Documents.replaceFileToICloud(localPath, (err,resultURL)=>{});

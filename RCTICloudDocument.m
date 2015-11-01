@@ -31,7 +31,7 @@ RCT_EXPORT_MODULE();
  Documents.getICloudToken((token)=>{});
  Documents.moveFileToICloud(localPath,(err, result)=>{});
  Documents.removeICloudFile(iCloudPath,(err, isSuccess)=>{});
-
+ 
  */
 
 
@@ -41,7 +41,7 @@ RCT_EXPORT_MODULE();
   NSFileManager *fileManager = [[NSFileManager alloc] init];
   NSURL *tmpFileURL = [NSURL URLWithString: [self createTempFile:urlFrom]];
   [fileManager copyItemAtURL:tmpFileURL toURL:urlTo error:nil];
-
+  
   NSURL *resultingURL;
   [fileManager replaceItemAtURL:urlTo withItemAtURL:tmpFileURL backupItemName:nil options:0 resultingItemURL:&resultingURL error:nil];
   if([resultingURL.absoluteString isEqualToString:urlTo.absoluteString]){
@@ -55,8 +55,8 @@ RCT_EXPORT_METHOD(replaceFileToICloud:(NSString *)localPath :(RCTResponseSenderB
   //  NSURL *docUrl = [self getICloudDocumentURL];
   NSURL *sourceURL = [NSURL fileURLWithPath:localPath];
   NSURL *destinationURL = [self getICloudDocumentURLByLocalPath:localPath];
-
-
+  
+  
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     [self createDirectionOfFileURL:destinationURL];
     NSURL *resultingURL = [self replaceItemFrom:sourceURL to:destinationURL];
@@ -72,7 +72,7 @@ RCT_EXPORT_METHOD(replaceFileFromICloud:(NSString *)iCloudPath :(RCTResponseSend
   //  NSURL *docUrl = [self getICloudDocumentURL];
   NSURL *sourceURL = [NSURL fileURLWithPath:iCloudPath];
   NSURL *destinationURL = [self getDocumentURLByICloudPath:iCloudPath];
-
+  
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     [self createDirectionOfFileURL:destinationURL];
     NSURL *resultingURL = [self replaceItemFrom:sourceURL to:destinationURL];
@@ -91,14 +91,14 @@ RCT_EXPORT_METHOD(copyFileToICloud:(NSString *)localPath :(RCTResponseSenderBloc
   //  NSURL *docUrl = [self getICloudDocumentURL];
   NSURL *sourceURL = [NSURL fileURLWithPath:localPath];
   NSURL *destinationURL = [self getICloudDocumentURLByLocalPath:localPath];
-
-
+  
+  
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     NSFileManager *fileManager = [[NSFileManager alloc] init];
     [self createDirectionOfFileURL:destinationURL];
     NSError *err = nil;
     [fileManager copyItemAtURL:sourceURL toURL:destinationURL error:&err];
-
+    
     if(err==nil) {
       callback(@[@NO, [destinationURL absoluteString]]);
     }else {
@@ -110,13 +110,13 @@ RCT_EXPORT_METHOD(copyFileFromICloud:(NSString *)path :(RCTResponseSenderBlock)c
 {
   NSURL *destinationURL = [self getDocumentURLByICloudPath:path];
   NSURL *sourceURL = [NSURL fileURLWithPath:path];
-
+  
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     NSFileManager *fileManager = [[NSFileManager alloc] init];
     [self createDirectionOfFileURL:destinationURL];
     NSError *err = nil;
     [fileManager copyItemAtURL:sourceURL toURL:destinationURL error:&err];
-
+    
     if(err==nil) {
       callback(@[@NO, [destinationURL absoluteString]]);
     }else {
@@ -136,13 +136,13 @@ RCT_EXPORT_METHOD(copyFileFromICloud:(NSString *)path :(RCTResponseSenderBlock)c
 RCT_EXPORT_METHOD(moveFileToICloud:(NSString *)pathToUpload :(RCTResponseSenderBlock)callback)
 {
   //  NSURL *docUrl = [self getICloudDocumentURL];
-
+  
   NSURL *sourceURL = [NSURL fileURLWithPath:pathToUpload];
   NSURL *destinationURL = [self getICloudDocumentURLByLocalPath:pathToUpload];
-
+  
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     NSFileManager *fileManager = [[NSFileManager alloc] init];
-
+    
     [self createDirectionOfFileURL:destinationURL];
     NSError *err = nil;
     BOOL success = [fileManager setUbiquitous:YES itemAtURL:sourceURL destinationURL:destinationURL error:&err];
@@ -153,19 +153,19 @@ RCT_EXPORT_METHOD(moveFileToICloud:(NSString *)pathToUpload :(RCTResponseSenderB
         callback(@[ [err localizedDescription] ]);
       }
     });
-
+    
   });
 }
 RCT_EXPORT_METHOD(moveFileFromICloud:(NSString *)iCloudPath :(RCTResponseSenderBlock)callback)
 {
   //  NSURL *docUrl = [self getICloudDocumentURL];
-
+  
   NSURL *sourceURL = [NSURL fileURLWithPath:iCloudPath];
   NSURL *destinationURL = [self getDocumentURLByICloudPath:iCloudPath];
-
+  
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     NSFileManager *fileManager = [[NSFileManager alloc] init];
-
+    
     [self createDirectionOfFileURL:destinationURL];
     NSError *err = nil;
     BOOL success = [fileManager setUbiquitous:NO itemAtURL:sourceURL destinationURL:destinationURL error:&err];
@@ -176,7 +176,7 @@ RCT_EXPORT_METHOD(moveFileFromICloud:(NSString *)iCloudPath :(RCTResponseSenderB
         callback(@[ [err localizedDescription] ]);
       }
     });
-
+    
   });
 }
 
@@ -198,7 +198,7 @@ RCT_EXPORT_METHOD(attributesOfItemAtPath:(NSString *)path :(RCTResponseSenderBlo
 #pragma mark - contents at item or directory
 RCT_EXPORT_METHOD(contentsAtPath:(NSString *)path :(RCTResponseSenderBlock)callback){
   NSFileManager *fileManager = [[NSFileManager alloc] init];
-
+  
   NSData *data = [fileManager contentsAtPath:path];
   NSString *dataStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
   //  NSLog(@"datastr %@", dataStr);
@@ -213,14 +213,14 @@ RCT_EXPORT_METHOD(contentsOfDirectoryAtPath:(NSString *)path :(RCTResponseSender
 #pragma mark - remove file with path
 RCT_EXPORT_METHOD(removeFileAtPath:(NSString *)pathToRemove :(RCTResponseSenderBlock)callback){
   NSURL *destinationURL = [NSURL URLWithString:pathToRemove];
-
+  
   NSFileManager *fileManager = [[NSFileManager alloc] init];
   BOOL fileExists = [fileManager fileExistsAtPath:pathToRemove];
   if(!fileExists){
     callback(@[@"file not exists"]);
     return;
   }
-
+  
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     NSError *error = nil;
     NSFileCoordinator *fileCoordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
@@ -234,7 +234,7 @@ RCT_EXPORT_METHOD(removeFileAtPath:(NSString *)pathToRemove :(RCTResponseSenderB
       }
     }];
   });
-
+  
 }
 
 #pragma mark - get iCloud token
@@ -243,15 +243,15 @@ RCT_EXPORT_METHOD(getICloudToken:(RCTResponseSenderBlock)callback){
   //  DumpObjcMethods(object_getClass(token));
   //  NSLog(@"token %@", token);
   if (token == nil) {
-    callback(@[[NSNull null]]);
+    callback(@[@"Token Nil", [NSNull null]]);
   }else {
-
+    
     NSData *tokenData = [NSKeyedArchiver archivedDataWithRootObject:token];
     NSLog(@"parsed token NSData %@", tokenData);
     //    NSString *tokenDataString = [[NSString alloc] initWithData:tokenData encoding:NSUTF8StringEncoding];
     NSString *tokenDataString = [tokenData description];
     NSLog(@"try parse data to string %@", tokenDataString);
-    callback(@[tokenDataString]);
+    callback(@[@NO, tokenDataString]);
     //    NSData *tokenData = [token serializedRepresentation];
     //    NSString *tokenStr = [[NSString alloc] initWithData:tokenData encoding:NSUTF8StringEncoding];
     //    callback(@[tokenStr]);
@@ -262,15 +262,15 @@ RCT_EXPORT_METHOD(getICloudToken:(RCTResponseSenderBlock)callback){
 #pragma mark - get iCloud or local doc root
 RCT_EXPORT_METHOD(iCloudDocumentPath:(RCTResponseSenderBlock)callback)
 {
-  callback(@[[self getICloudDocumentURL] ]);
+  callback(@[@NO, [self getICloudDocumentURL] ]);
 }
 RCT_EXPORT_METHOD(documentPath:(RCTResponseSenderBlock)callback)
 {
-  callback(@[ [self _documentPath] ]);
+  callback(@[@NO,  [self _documentPath] ]);
 }
 RCT_EXPORT_METHOD(getICloudDocumentURLByLocalPath:(NSString *)localPath :(RCTResponseSenderBlock)callback){
   NSURL *url = [self getICloudDocumentURLByLocalPath:localPath];
-  callback(@[ [url absoluteString] ]);
+  callback(@[@NO,  [url absoluteString] ]);
 }
 
 
