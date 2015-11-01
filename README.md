@@ -16,7 +16,7 @@ Documents.getICloudToken((err, token)=>{});
 Documents.iCloudDocumentPath((err, path)=>{});
 Documents.documentPath((err, path)=>{});
 
-// overwrite file to or from iCloud
+// copy and overwrite file to or from iCloud
 Documents.replaceFileToICloud(localPath, (err,resultURL)=>{});
 Documents.replaceFileFromICloud(iCloudPath, (err,resultURL)=>{});
 
@@ -24,7 +24,7 @@ Documents.replaceFileFromICloud(iCloudPath, (err,resultURL)=>{});
 Documents.copyFileToICloud(localPath, (err,resultURL)=>{});
 Documents.copyFileFromICloud(iCloudPath, (err,resultURL)=>{});
 
-// move file to or from icloud
+// move file to or from iCloud
 Documents.moveFileToICloud(localPath, (err,resultURL)=>{});
 Documents.moveFileFromICloud(iCloudPath, (err,resultURL)=>{});
 

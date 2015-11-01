@@ -11,6 +11,8 @@
 
 @interface RCTICloudDocuments : NSObject <RCTBridgeModule>
 
+@property (nonatomic, retain) NSMetadataQuery *query;
+
 @end
 
 @implementation RCTICloudDocuments
@@ -38,24 +40,40 @@ RCT_EXPORT_MODULE();
 #pragma mark - replace file to or from iCloud
 
 - (NSURL *)replaceItemFrom: (NSURL *)urlFrom to:(NSURL *)urlTo {
+
   NSFileManager *fileManager = [[NSFileManager alloc] init];
-  NSURL *tmpFileURL = [NSURL URLWithString: [self createTempFile:urlFrom]];
-  [fileManager copyItemAtURL:tmpFileURL toURL:urlTo error:nil];
-  
-  NSURL *resultingURL;
-  [fileManager replaceItemAtURL:urlTo withItemAtURL:tmpFileURL backupItemName:nil options:0 resultingItemURL:&resultingURL error:nil];
-  if([resultingURL.absoluteString isEqualToString:urlTo.absoluteString]){
-    return resultingURL;
-  }else {
+  if(![fileManager fileExistsAtPath:[urlFrom path]]){
     return nil;
   }
+  NSLog(@"urlFrom %@", urlFrom); 
+//  return urlFrom;
+  NSURL *tmpFileURL = [NSURL URLWithString: [self createTempFile:urlFrom]];
+  NSLog(@"tmp file url %@, %@", urlFrom, tmpFileURL);
+  return tmpFileURL;
+  [fileManager copyItemAtURL:urlFrom toURL:tmpFileURL error:nil];
+  NSLog(@"copied tmp\nurlTo: %@\n\n", urlTo);
+  NSURL *resultingURL;
+  NSError *err;
+  return tmpFileURL;
+  [fileManager setUbiquitous:YES itemAtURL:tmpFileURL destinationURL:urlTo error:nil];
+  return urlTo;
+//  [fileManager replaceItemAtURL:urlTo withItemAtURL:tmpFileURL backupItemName:nil options:0 resultingItemURL:&resultingURL error:&err];
+//  if(!err && [resultingURL.absoluteString isEqualToString:urlTo.absoluteString]){
+//    return resultingURL;
+//  }else {
+//    NSLog(@"replace error %@", err);
+//    return nil;
+//  }
 }
 RCT_EXPORT_METHOD(replaceFileToICloud:(NSString *)localPath :(RCTResponseSenderBlock)callback)
 {
   //  NSURL *docUrl = [self getICloudDocumentURL];
-  NSURL *sourceURL = [NSURL fileURLWithPath:localPath];
+  NSURL *sourceURL = [NSURL URLWithString:localPath];
+//    NSURL *sourceURL = [NSURL fileURLWithPath:localPath];
   NSURL *destinationURL = [self getICloudDocumentURLByLocalPath:localPath];
   
+  
+//  NSLog(@"replace file to icloud local: %@, src: %@, dest: %@", localPath, sourceURL, destinationURL);
   
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     [self createDirectionOfFileURL:destinationURL];
@@ -72,9 +90,14 @@ RCT_EXPORT_METHOD(replaceFileFromICloud:(NSString *)iCloudPath :(RCTResponseSend
   //  NSURL *docUrl = [self getICloudDocumentURL];
   NSURL *sourceURL = [NSURL fileURLWithPath:iCloudPath];
   NSURL *destinationURL = [self getDocumentURLByICloudPath:iCloudPath];
-  
+  if(![[[NSFileManager alloc] init] fileExistsAtPath:iCloudPath]){
+    callback(@[@"file not exists, probably not downloaded yet"]);
+    return;
+  }
+//  return;
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     [self createDirectionOfFileURL:destinationURL];
+  
     NSURL *resultingURL = [self replaceItemFrom:sourceURL to:destinationURL];
     if(resultingURL==nil){
       callback(@[@"URL unexpectly changed during replacing", [resultingURL absoluteString]]);
@@ -180,6 +203,70 @@ RCT_EXPORT_METHOD(moveFileFromICloud:(NSString *)iCloudPath :(RCTResponseSenderB
   });
 }
 
+
+RCT_EXPORT_METHOD(itemAttrsOfDirectoryAtICloud:(NSString *)path :(RCTResponseSenderBlock)callback){
+  
+  dispatch_sync(dispatch_get_main_queue(), ^{
+    
+    query = [[NSMetadataQuery alloc] init];
+      [query setSearchScopes:@[NSMetadataQueryUbiquitousDocumentsScope]];
+//    [query setSearchScopes:@[NSMetadataQueryUbiquitousDataScope]];
+    
+    //      NSPredicate *pred = [NSPredicate predicateWithFormat: @"%K like '*.*'", NSMetadataItemFSNameKey];
+    //  NSString *icloudPath =
+    //  NSPredicate *pred = [NSPredicate predicateWithFormat:[NSString stringWithFormat:@"%%K like \"%@*\"", path], NSMetadataItemPathKey];
+//    NSLog(@"predict path %@", [NSString stringWithFormat:@"%@ MATCHES '%@/*.*'", NSMetadataItemPathKey, path]);
+    
+//    [query setPredicate:[NSPredicate predicateWithFormat:@"%K MATCHES '%@/*.*'", NSMetadataItemPathKey, path]];
+//    NSString *path2 = [[[NSFileManager alloc] init] URLForUbiquityContainerIdentifier:nil].path;
+//    NSLog(@"predict path2 %@", path2);
+    [query setPredicate:[NSPredicate predicateWithFormat:@"%K BEGINSWITH %@", NSMetadataItemPathKey, path]];
+    
+    //    [[NSNotificationCenter defaultCenter] addObserver:self
+    //                                             selector:@selector(queryDidFinishGathering:)
+    //                                                 name:NSMetadataQueryDidFinishGatheringNotification
+    //                                               object:query];
+    
+    
+    [[NSNotificationCenter defaultCenter] addObserverForName:NSMetadataQueryDidFinishGatheringNotification object:query queue:nil usingBlock:^(NSNotification * _Nonnull note) {
+      //      NSMetadataQuery *query = [note object];
+      NSArray *res = [self queryDidFinishGathering:note];
+      callback(@[@NO, res]);
+    }];
+    [query startQuery];
+  });
+
+}
+
+@synthesize query;
+
+- (NSArray *)queryDidFinishGathering:(NSNotification *)notification {
+//  NSLog(@"did finish");
+//  NSMetadataQuery *query = [notification object];
+  NSMutableArray *res = [NSMutableArray array];
+  [query enumerateResultsUsingBlock:^(id  _Nonnull result, NSUInteger idx, BOOL * _Nonnull stop) {
+    NSNumber *createAt = [self getDateNumber:[result valueForAttribute:NSMetadataItemFSCreationDateKey]];
+    NSNumber *modifyAt = [self getDateNumber:[result valueForAttribute:NSMetadataItemFSContentChangeDateKey]];
+    NSDictionary *item = @{
+                           @"path": [result valueForAttribute:NSMetadataItemPathKey],
+                           @"name": [result valueForAttribute:NSMetadataItemFSNameKey],
+                           @"createAt": createAt,
+                           @"modifyAt": modifyAt
+                           };
+    [res addObject:item];
+//    NSLog(@"meta item %@", result);
+  }];
+  return res;
+//  [[query results] enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+//    
+//  }];
+//  NSLog(@"did finish observe %@", res);
+  
+//  [query disableUpdates];
+//  [query stopQuery];
+  
+}
+
 #pragma mark - get file attributes with path
 RCT_EXPORT_METHOD(attributesOfItemAtPath:(NSString *)path :(RCTResponseSenderBlock)callback){
   NSFileManager *fileManager = [[NSFileManager alloc] init];
@@ -190,15 +277,16 @@ RCT_EXPORT_METHOD(attributesOfItemAtPath:(NSString *)path :(RCTResponseSenderBlo
     callback(@[@"path not exists"]);
     return;
   }else if(isDir){
-    NSLog(@"isDir");
     attrs = [fileManager attributesOfItemAtPath:path error:nil];
   }else {
     attrs = [fileManager attributesOfItemAtPath:path error:nil];
   }
   
-  NSNumber *createAt = [NSNumber numberWithDouble: [[attrs objectForKey:@"NSFileCreationDate"] timeIntervalSince1970] ];
-  NSNumber *modifyAt = [NSNumber numberWithDouble: [[attrs objectForKey:@"NSFileModificationDate"] timeIntervalSince1970] ];
-  NSLog(@"attrs %@ at %@", attrs, path);
+//  NSNumber *createAt = [NSNumber numberWithDouble: [[attrs objectForKey:@"NSFileCreationDate"] timeIntervalSince1970] ];
+  NSNumber *createAt = [self getDateNumber:[attrs objectForKey:@"NSFileCreationDate"]];
+//  NSNumber *modifyAt = [NSNumber numberWithDouble: [[attrs objectForKey:@"NSFileModificationDate"] timeIntervalSince1970] ];
+  NSNumber *modifyAt = [self getDateNumber:[attrs objectForKey:@"NSFileModificationDate"]];
+//  NSLog(@"attrs %@ at %@", attrs, path);
   NSMutableDictionary *ret = [NSMutableDictionary dictionaryWithDictionary: @{
             @"path": path,
             @"createAt": createAt,
@@ -211,7 +299,9 @@ RCT_EXPORT_METHOD(attributesOfItemAtPath:(NSString *)path :(RCTResponseSenderBlo
   //  NSLog(@"attrs %@", attrs);
   callback(@[@NO, ret]);
 }
-
+- (NSNumber *)getDateNumber: (id)obj{
+  return [NSNumber numberWithDouble: [ obj timeIntervalSince1970] ];
+}
 
 #pragma mark - contents at item or directory
 RCT_EXPORT_METHOD(contentsAtPath:(NSString *)path :(RCTResponseSenderBlock)callback){
@@ -224,8 +314,14 @@ RCT_EXPORT_METHOD(contentsAtPath:(NSString *)path :(RCTResponseSenderBlock)callb
 }
 RCT_EXPORT_METHOD(contentsOfDirectoryAtPath:(NSString *)path :(RCTResponseSenderBlock)callback){
   NSFileManager *fileManager = [[NSFileManager alloc] init];
-  NSArray *array = [fileManager contentsOfDirectoryAtPath:path error:nil];
-  callback(@[@NO, array]);
+  NSError *err;
+  NSArray *array = [fileManager contentsOfDirectoryAtPath:path error:&err];
+//  NSLog(@"contentsOfDirectoryAtPath err %@", [err description]);
+  if(err){
+    callback(@[[err localizedDescription]]);
+  }else {
+    callback(@[@NO, array]);
+  }
 }
 
 #pragma mark - remove file with path
@@ -280,7 +376,7 @@ RCT_EXPORT_METHOD(getICloudToken:(RCTResponseSenderBlock)callback){
 #pragma mark - get iCloud or local doc root
 RCT_EXPORT_METHOD(iCloudDocumentPath:(RCTResponseSenderBlock)callback)
 {
-  callback(@[@NO, [[self getICloudDocumentURL] absoluteString] ]);
+  callback(@[@NO, [[self getICloudDocumentURL] path] ]);
 }
 RCT_EXPORT_METHOD(documentPath:(RCTResponseSenderBlock)callback)
 {
@@ -294,9 +390,17 @@ RCT_EXPORT_METHOD(getICloudDocumentURLByLocalPath:(NSString *)localPath :(RCTRes
 
 #pragma mark - native methods
 - (NSString *)createTempFile:(NSURL *)url {
+  NSFileManager *fileManager = [[NSFileManager alloc] init];
   NSString *filename = [url lastPathComponent];
   NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
-  BOOL tempCopied = [[[NSFileManager alloc] init] copyItemAtPath:[url absoluteString] toPath:tempPath error:nil];
+  [fileManager createDirectoryAtPath:tempPath withIntermediateDirectories:YES attributes:nil error:nil];
+//  fileManager createDirectoryAtURL:<#(nonnull NSURL *)#> withIntermediateDirectories:<#(BOOL)#> attributes:<#(nullable NSDictionary<NSString *,id> *)#> error:<#(NSError * _Nullable __autoreleasing * _Nullable)#>
+  if ( [fileManager fileExistsAtPath:tempPath] ) {
+    [fileManager removeItemAtPath:tempPath error:nil];
+  }
+  NSError *err;
+  BOOL tempCopied = [fileManager copyItemAtPath:[url absoluteString] toPath:tempPath error:&err];
+  NSLog(@"create tmp err %@", err);
   if (tempCopied) {
     return tempPath;
   }else {
@@ -317,6 +421,7 @@ RCT_EXPORT_METHOD(getICloudDocumentURLByLocalPath:(NSString *)localPath :(RCTRes
   //  NSString *docPath = [self _documentPath];
   NSRange range = [path rangeOfString:@"Documents/"];
   NSString *relativePath = [path substringFromIndex:range.location+range.length];
+//  NSLog(@"relative path input:%@ out:%@", path, relativePath);
   return relativePath;
 }
 - (NSURL *)getDocumentURLByICloudPath: (NSString *)iCloudPath {
@@ -336,6 +441,7 @@ RCT_EXPORT_METHOD(getICloudDocumentURLByLocalPath:(NSString *)localPath :(RCTRes
   // get icloud docURL with default bundleID
   NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
   NSString *icloudID = [NSString stringWithFormat:@"iCloud.%@", bundleIdentifier];
+//  [NSFileManager URLForUbiquityContainerIdentifier:nil].path
   NSURL *containerURL = [[NSFileManager defaultManager] URLForUbiquityContainerIdentifier:icloudID];
   //  NSURL *containerURL = [[NSFileManager defaultManager] URLForUbiquityContainerIdentifier:nil];
   NSURL *docUrl = [containerURL URLByAppendingPathComponent:@"Documents"];
